@@ -13,20 +13,28 @@ class EchoServerProtocol(asyncio.Protocol):
         self.peername = transport.get_extra_info('peername')
         self.data_base += [transport]
         self.transport = transport
-        print('Connection from {}'.format(self.peername))
 
     def data_received(self, data):
+        othertrans = self.data_base.copy()
+        othertrans.remove(self.transport)
         if data:
             if not self.name:
                 self.name = data.decode()
                 print('Connection from: {} (Name: {})'.format(self.peername, data.decode()))
                 self.transport.write('You connect <{}> from {}'.format(self.name, self.peername).encode())
+                for trans in othertrans:
+                    mes = 'Connect <{}> from server'.format(self.name)
+                    trans.write(mes.encode())
             elif data.decode()[0] == "-":
                 if data.decode() == "-h" or data.decode() == "-help":
-                    pass
-
+                    self.transport.write('Commands: \n 1. -exit or -q [Disconnect from server] \n 2. ... .'.encode())
+                elif data.decode() == "-q" or data.decode() == "-exit":
+                    self.transport.close()
+                    self.data_base.remove(self.transport)
+                else:
+                    self.transport.write('Not command "{}"'.format(data.decode()).encode())
             else:
-                for trans in self.data_base:
+                for trans in othertrans:
                     mes = '<{}> {}'.format(self.name, data.decode())
                     trans.write(mes.encode())
                 print('<{}> {}'.format(self.name, data.decode()))
@@ -36,8 +44,6 @@ class EchoServerProtocol(asyncio.Protocol):
         for trans in self.data_base:
             mes = '<{}> disconnect'.format(self.name)
             trans.write(mes.encode())
-        self.data_base.remove(self.transport)
-        self.transport.close()
 
 
 async def main():
@@ -58,5 +64,3 @@ async def main():
 
 
 asyncio.run(main())
-
-
