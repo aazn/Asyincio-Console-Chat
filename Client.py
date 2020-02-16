@@ -30,7 +30,6 @@ class EchoClientProtocol(asyncio.Protocol):
             self.send(mes)
 
 
-
 async def main():
     settings = argparse.ArgumentParser()
     settings.add_argument("--addr", default="127.0.0.1", type=str)
